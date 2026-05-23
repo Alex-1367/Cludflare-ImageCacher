@@ -2,6 +2,7 @@
 
 import { getImageExtension } from './cacheKeyGenerator.js';
 import { storeInR2 } from './r2Service.js';
+import { fromBase64, toBase64 } from './base64.js'
 
 export async function storeImageMapping(imageUrl, propertyId, imageIndex, imageData, env, requestId) {
     try {
@@ -11,7 +12,8 @@ export async function storeImageMapping(imageUrl, propertyId, imageIndex, imageD
 
         await storeInR2(cacheKey, imageData, env, requestId);
 
-        const urlKvKey = `url:${Buffer.from(imageUrl).toString('base64')}`;
+        const urlKvKey = `url:${toBase64(imageUrl)}`;
+
         const mappingData = {
             cacheKey: cacheKey,
             originalUrl: imageUrl,
@@ -86,6 +88,59 @@ export async function getPropertyImages(propertyId, env, requestId) {
     }
 }
 
+export async function storeUrlMapping(imageUrl, cacheKey, env, requestId) {
+    try {
+        const kvKey = `url:${toBase64(imageUrl)}`;
+
+        const mappingData = {
+            cacheKey: cacheKey,
+            originalUrl: imageUrl,
+            cachedAt: new Date().toISOString(),
+            size: 0
+        };
+        await env.IMAGE_MAPPINGS.put(kvKey, JSON.stringify(mappingData));
+        const reverseKey = `key:${cacheKey}`;
+        await env.IMAGE_MAPPINGS.put(reverseKey, imageUrl);
+        console.log(`[${requestId}] [KV] Stored mapping for: ${imageUrl.substring(0, 60)}... → ${cacheKey}`);
+        return true;
+    } catch (error) {
+        console.error(`[${requestId}] [KV] Failed to store mapping: ${error.message}`);
+        return false;
+    }
+}
+
+export async function getCacheKeyFromUrl(imageUrl, env, requestId) {
+    try {
+        // FIX: Use toBase64 instead of Buffer.from
+        const kvKey = `url:${toBase64(imageUrl)}`;
+        const mapping = await env.IMAGE_MAPPINGS.get(kvKey, 'json');
+        if (mapping && mapping.cacheKey) {
+            console.log(`[${requestId}] [KV] Found mapping: ${imageUrl.substring(0, 60)}... → ${mapping.cacheKey}`);
+            return mapping.cacheKey;
+        }
+        console.log(`[${requestId}] [KV] No mapping found for: ${imageUrl.substring(0, 60)}...`);
+        return null;
+    } catch (error) {
+        console.error(`[${requestId}] [KV] Failed to get mapping: ${error.message}`);
+        return null;
+    }
+}
+
+export async function updateMappingWithSize(imageUrl, cacheKey, size, env, requestId) {
+    try {
+        const kvKey = `url:${toBase64(imageUrl)}`;
+        const mapping = await env.IMAGE_MAPPINGS.get(kvKey, 'json');
+        if (mapping) {
+            mapping.size = size;
+            mapping.updatedAt = new Date().toISOString();
+            await env.IMAGE_MAPPINGS.put(kvKey, JSON.stringify(mapping));
+            console.log(`[${requestId}] [KV] Updated mapping with size: ${size} bytes`);
+        }
+    } catch (error) {
+        console.error(`[${requestId}] [KV] Failed to update mapping: ${error.message}`);
+    }
+}
+
 export async function deletePropertyImages(propertyId, env, requestId) {
     try {
         const propertyKey = `property:${propertyId}`;
@@ -100,7 +155,8 @@ export async function deletePropertyImages(propertyId, env, requestId) {
 
         for (const img of propertyImages.images) {
             await bucket.delete(img.cacheKey);
-            const urlKvKey = `url:${Buffer.from(img.originalUrl).toString('base64')}`;
+            // FIXED: Use toBase64 instead of Buffer
+            const urlKvKey = `url:${toBase64(img.originalUrl)}`;
             await env.IMAGE_MAPPINGS.delete(urlKvKey);
             const reverseKey = `key:${img.cacheKey}`;
             await env.IMAGE_MAPPINGS.delete(reverseKey);
@@ -124,7 +180,8 @@ export async function deleteSingleImage(cacheKey, env, requestId) {
         const originalUrl = await env.IMAGE_MAPPINGS.get(reverseKey);
 
         if (originalUrl) {
-            const urlKvKey = `url:${Buffer.from(originalUrl).toString('base64')}`;
+            // FIXED: Use toBase64 instead of Buffer
+            const urlKvKey = `url:${toBase64(originalUrl)}`;
             await env.IMAGE_MAPPINGS.delete(urlKvKey);
             await env.IMAGE_MAPPINGS.delete(reverseKey);
 
@@ -156,56 +213,5 @@ export async function deleteSingleImage(cacheKey, env, requestId) {
     } catch (error) {
         console.error(`[${requestId}] [KV] Failed to delete image: ${error.message}`);
         return { success: false, error: error.message };
-    }
-}
-
-export async function storeUrlMapping(imageUrl, cacheKey, env, requestId) {
-    try {
-        const kvKey = `url:${Buffer.from(imageUrl).toString('base64')}`;
-        const mappingData = {
-            cacheKey: cacheKey,
-            originalUrl: imageUrl,
-            cachedAt: new Date().toISOString(),
-            size: 0
-        };
-        await env.IMAGE_MAPPINGS.put(kvKey, JSON.stringify(mappingData));
-        const reverseKey = `key:${cacheKey}`;
-        await env.IMAGE_MAPPINGS.put(reverseKey, imageUrl);
-        console.log(`[${requestId}] [KV] Stored mapping for: ${imageUrl.substring(0, 60)}... → ${cacheKey}`);
-        return true;
-    } catch (error) {
-        console.error(`[${requestId}] [KV] Failed to store mapping: ${error.message}`);
-        return false;
-    }
-}
-
-export async function getCacheKeyFromUrl(imageUrl, env, requestId) {
-    try {
-        const kvKey = `url:${Buffer.from(imageUrl).toString('base64')}`;
-        const mapping = await env.IMAGE_MAPPINGS.get(kvKey, 'json');
-        if (mapping && mapping.cacheKey) {
-            console.log(`[${requestId}] [KV] Found mapping: ${imageUrl.substring(0, 60)}... → ${mapping.cacheKey}`);
-            return mapping.cacheKey;
-        }
-        console.log(`[${requestId}] [KV] No mapping found for: ${imageUrl.substring(0, 60)}...`);
-        return null;
-    } catch (error) {
-        console.error(`[${requestId}] [KV] Failed to get mapping: ${error.message}`);
-        return null;
-    }
-}
-
-export async function updateMappingWithSize(imageUrl, cacheKey, size, env, requestId) {
-    try {
-        const kvKey = `url:${Buffer.from(imageUrl).toString('base64')}`;
-        const mapping = await env.IMAGE_MAPPINGS.get(kvKey, 'json');
-        if (mapping) {
-            mapping.size = size;
-            mapping.updatedAt = new Date().toISOString();
-            await env.IMAGE_MAPPINGS.put(kvKey, JSON.stringify(mapping));
-            console.log(`[${requestId}] [KV] Updated mapping with size: ${size} bytes`);
-        }
-    } catch (error) {
-        console.error(`[${requestId}] [KV] Failed to update mapping: ${error.message}`);
     }
 }

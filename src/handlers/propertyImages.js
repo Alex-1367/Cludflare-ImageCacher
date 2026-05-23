@@ -1,7 +1,7 @@
 // ./handlers/propertyImages.js
 
 import { downloadImage } from '../services/downloadImage.js';
-import { storeImageMapping } from '../services/kvService.js';
+import { storeImageMapping, getPropertyImages, deletePropertyImages } from '../services/kvService.js';
 
 export async function handlePropertyBatchUpload(request, env, requestId) {
     const apiKey = request.headers.get('X-API-Key');

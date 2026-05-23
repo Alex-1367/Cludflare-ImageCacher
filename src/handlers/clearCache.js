@@ -1,5 +1,7 @@
 //  ./handlers/clearCache.js
 
+import { deleteSingleImage } from '../services/kvService.js';
+
 export async function handleClearOldCache(request, env, requestId) {
     const apiKey = request.headers.get('X-API-Key');
     if (apiKey !== env.API_KEY) {
@@ -37,4 +39,16 @@ export async function handleClearOldCache(request, env, requestId) {
         timeMs: Date.now() - startTime,
         requestId,
     }), { status: 200 });
+}
+
+export async function handleDeleteImage(url, env, requestId) {
+    const cacheKey = url.searchParams.get('key');
+    if (!cacheKey) {
+        return new Response(JSON.stringify({ success: false, error: 'key required', requestId }), { status: 400 });
+    }
+    const result = await deleteSingleImage(cacheKey, env, requestId);
+    return new Response(JSON.stringify(result), { 
+        status: result.success ? 200 : 500,
+        headers: { 'Content-Type': 'application/json' }
+    });
 }

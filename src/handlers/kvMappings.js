@@ -1,5 +1,7 @@
 // ./handlers/kvMappings.js
 
+import { fromBase64, toBase64 } from '../services/base64.js'
+
 export async function handleGetUrlMapping(url, env, requestId) {
     const imageUrl = url.searchParams.get('url');
 
@@ -12,7 +14,8 @@ export async function handleGetUrlMapping(url, env, requestId) {
     }
 
     try {
-        const kvKey = `url:${Buffer.from(imageUrl).toString('base64')}`;
+        // FIX: Use toBase64 instead of Buffer.from
+        const kvKey = `url:${toBase64(imageUrl)}`;
         const mapping = await env.IMAGE_MAPPINGS.get(kvKey, 'json');
 
         if (!mapping) {
@@ -24,7 +27,6 @@ export async function handleGetUrlMapping(url, env, requestId) {
             }), { status: 404 });
         }
 
-        // Also check if the actual image exists in R2
         const bucket = env.MY_BUCKET;
         const object = await bucket.head(mapping.cacheKey);
         const existsInR2 = object !== null;
@@ -57,7 +59,6 @@ export async function handleListUrlMappings(url, env, requestId) {
     console.log(`[${requestId}] [KV] Listing URL mappings, limit=${limit}`);
 
     try {
-        // List only entries starting with 'url:' prefix
         const listOptions = { prefix: 'url:', limit: Math.min(limit, 100) };
         if (cursor) {
             listOptions.cursor = cursor;
@@ -69,11 +70,12 @@ export async function handleListUrlMappings(url, env, requestId) {
         for (const key of listed.keys) {
             const mapping = await env.IMAGE_MAPPINGS.get(key.name, 'json');
             if (mapping) {
-                // Decode the original URL from the base64 key
+                // Decode the original URL from the key
                 let originalUrl = mapping.originalUrl;
                 if (!originalUrl) {
                     // Fallback: decode from key name
-                    originalUrl = Buffer.from(key.name.replace('url:', ''), 'base64').toString();
+                    const keyWithoutPrefix = key.name.replace('url:', '');
+                    originalUrl = fromBase64(keyWithoutPrefix);
                 }
 
                 mappings.push({
@@ -135,7 +137,7 @@ export async function handleDeleteUrlMapping(request, env, requestId) {
     }
 
     try {
-        const kvKey = `url:${Buffer.from(imageUrl).toString('base64')}`;
+        const kvKey = `url:${toBase64(imageUrl)}`;
         const mapping = await env.IMAGE_MAPPINGS.get(kvKey, 'json');
 
         if (!mapping) {
@@ -146,11 +148,9 @@ export async function handleDeleteUrlMapping(request, env, requestId) {
             }), { status: 404 });
         }
 
-        // Delete both forward and reverse mappings
         await env.IMAGE_MAPPINGS.delete(kvKey);
         await env.IMAGE_MAPPINGS.delete(`key:${mapping.cacheKey}`);
 
-        // Optionally delete the actual image from R2
         const bucket = env.MY_BUCKET;
         await bucket.delete(mapping.cacheKey);
 

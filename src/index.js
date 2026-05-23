@@ -23,6 +23,7 @@ import { ALLOWED_ORIGINS, getCorsHeaders, isLocalRequest, isAllowedOrigin } from
 import { isValidApiKey } from './services/authService.js';
 
 // Import all handlers
+import { deleteSingleImage } from './services/kvService.js';
 import { handleHealth } from './handlers/health.js';
 import { handleDiagnostics } from './handlers/diagnostics.js';
 import { handleCacheStats } from './handlers/cacheStats.js';
@@ -34,7 +35,7 @@ import { handleBatchUpload } from './handlers/batchUpload.js';
 import { handlePropertyBatchUpload, handleGetPropertyImages, handleDeletePropertyImages } from './handlers/propertyImages.js';
 import { handleFileUpload } from './handlers/fileUpload.js';
 import { handleServeImage } from './handlers/serveImage.js';
-import { handleClearOldCache } from './handlers/clearCache.js';
+import { handleClearOldCache, handleDeleteImage } from './handlers/clearCache.js';
 import { handleListUrlMappings, handleGetUrlMapping, handleDeleteUrlMapping } from './handlers/kvMappings.js';
 import { handleKvStats } from './handlers/kvStats.js';
 
@@ -80,7 +81,7 @@ export default {
             let response;
 
             // Route handlers
-            const routes = {
+           const routes = {
                 'POST:/cache/images': () => handleBatchUpload(request, env, requestId),
                 'POST:/cache/image': () => handleSingleUpload(request, env, requestId),
                 'POST:/cache/property-images': () => handlePropertyBatchUpload(request, env, requestId),
@@ -98,6 +99,7 @@ export default {
                 'DELETE:/cache/images': () => handleClearOldCache(request, env, requestId),
                 'GET:/cache/property-images': () => handleGetPropertyImages(url, env, requestId),
                 'DELETE:/cache/property-images': () => handleDeletePropertyImages(url, env, requestId),
+                'DELETE:/cache/image': () => handleDeleteImage(url, env, requestId),  
             };
 
             const routeKey = `${method}:${url.pathname}`;
@@ -111,7 +113,6 @@ export default {
                 response = new Response(JSON.stringify({ success: false, error: 'Not Found', requestId }), { status: 404 });
             }
 
-            // Add headers
             response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
             response.headers.set('X-Request-ID', requestId);
             for (const [key, value] of Object.entries(corsHeaders)) {
@@ -123,8 +124,8 @@ export default {
             console.error(`[${requestId}] [ERROR] ${error.message}`);
             return new Response(JSON.stringify({ success: false, error: error.message, requestId }), { status: 500 });
         }
-    },
-};
+    }
+}
 
 
 

@@ -2,6 +2,7 @@
 
 import { storeInR2 } from '../services/r2Service.js';
 import { MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_SIZE_MB } from '../utils/constants.js';
+import { fromBase64, toBase64 } from '../services/base64.js'
 
 export async function handleFileUpload(request, env, requestId) {
     const apiKey = request.headers.get('X-API-Key');
