@@ -1,4 +1,12 @@
 {
+  "name": "prus-api3",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production"
+  },
   "dependencies": {
     "dotenv": "^17.4.2"
   }
