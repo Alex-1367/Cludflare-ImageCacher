@@ -6,8 +6,10 @@ export const ALLOWED_ORIGINS = [
     'https://imbcargo-montenegro.com',
     'http://localhost:4200',
     'http://localhost:8787',
+    'http://localhost:5500',        
     'http://127.0.0.1:4200',
     'http://127.0.0.1:8787',
+    'http://127.0.0.1:5500',       
     'https://prus-api2.burgas275.workers.dev',
 ];
 
@@ -26,7 +28,9 @@ export function isLocalRequest(host) {
         host === 'localhost:8787' ||
         host === '127.0.0.1:8787' ||
         host === 'localhost:4200' ||
-        host === '127.0.0.1:4200';
+        host === '127.0.0.1:4200' ||
+        host === 'localhost:5500' ||     
+        host === '127.0.0.1:5500';       
 }
 
 export function isAllowedOrigin(origin, host) {

@@ -4,7 +4,7 @@ import { CACHE_TTL_SECONDS, SUPPORTED_FORMATS, MAX_IMAGE_SIZE_BYTES } from '../u
 
 export async function storeInR2(key, imageData, env, requestId) {
     console.log(`[${requestId}] [STORAGE] Storing to R2: ${key}`);
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;  // Changed from MY_BUCKET to R2_BUCKET
     const storeStart = Date.now();
 
     await bucket.put(key, imageData.data, {
@@ -22,7 +22,7 @@ export async function storeInR2(key, imageData, env, requestId) {
 }
 
 export async function existsInCache(key, env, requestId) {
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;  // Changed from MY_BUCKET to R2_BUCKET
     const object = await bucket.head(key);
     const exists = object !== null;
     console.log(`[${requestId}] [CACHE] ${exists ? 'Hit' : 'Miss'}: ${key}`);
@@ -30,20 +30,19 @@ export async function existsInCache(key, env, requestId) {
 }
 
 export async function getFromR2(key, env, requestId) {
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;  // Changed from MY_BUCKET to R2_BUCKET
     return await bucket.get(key);
 }
 
 export async function deleteFromR2(key, env, requestId) {
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;  // Changed from MY_BUCKET to R2_BUCKET
     await bucket.delete(key);
     console.log(`[${requestId}] [R2] Deleted: ${key}`);
 }
 
 export async function listR2Images(env, prefix, limit, cursor, requestId) {
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;  // Changed from MY_BUCKET to R2_BUCKET
     const listOptions = { prefix, limit: Math.min(limit, 100) };
     if (cursor) listOptions.cursor = cursor;
     return await bucket.list(listOptions);
 }
-

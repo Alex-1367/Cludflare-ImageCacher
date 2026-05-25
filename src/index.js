@@ -38,6 +38,7 @@ import { handleServeImage } from './handlers/serveImage.js';
 import { handleClearOldCache, handleDeleteImage } from './handlers/clearCache.js';
 import { handleListUrlMappings, handleGetUrlMapping, handleDeleteUrlMapping } from './handlers/kvMappings.js';
 import { handleKvStats } from './handlers/kvStats.js';
+import { handleDebugBinding } from './handlers/debugBinding.js'
 
 // Public endpoints that don't require API key
 const PUBLIC_ENDPOINTS = ['/cache/health', '/cache/diagnostics', '/cache/status', '/cache/stats'];
@@ -65,8 +66,11 @@ export default {
         const corsHeaders = getCorsHeaders(origin, allowedOrigin);
 
         // Handle CORS preflight
-        if (method === 'OPTIONS') {
-            return new Response(null, { status: 204, headers: corsHeaders });
+        if (request.method === 'OPTIONS') {
+            return new Response(null, {
+                status: 204,
+                headers: corsHeaders
+            });
         }
 
         // API Key check for non-public endpoints
@@ -81,7 +85,7 @@ export default {
             let response;
 
             // Route handlers
-           const routes = {
+            const routes = {
                 'POST:/cache/images': () => handleBatchUpload(request, env, requestId),
                 'POST:/cache/image': () => handleSingleUpload(request, env, requestId),
                 'POST:/cache/property-images': () => handlePropertyBatchUpload(request, env, requestId),
@@ -99,7 +103,8 @@ export default {
                 'DELETE:/cache/images': () => handleClearOldCache(request, env, requestId),
                 'GET:/cache/property-images': () => handleGetPropertyImages(url, env, requestId),
                 'DELETE:/cache/property-images': () => handleDeletePropertyImages(url, env, requestId),
-                'DELETE:/cache/image': () => handleDeleteImage(url, env, requestId),  
+                'DELETE:/cache/image': () => handleDeleteImage(url, env, requestId),
+                'GET:/api/debug/bindings': () => handleDebugBinding(request, env, requestId),
             };
 
             const routeKey = `${method}:${url.pathname}`;
@@ -113,25 +118,25 @@ export default {
                 response = new Response(JSON.stringify({ success: false, error: 'Not Found', requestId }), { status: 404 });
             }
 
+            // Add headers to response - FIXED: now corsHeaders is defined
             response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
             response.headers.set('X-Request-ID', requestId);
+
+            // Add CORS headers to response
             for (const [key, value] of Object.entries(corsHeaders)) {
-                if (!response.headers.has(key)) response.headers.set(key, value);
+                if (!response.headers.has(key)) {
+                    response.headers.set(key, value);
+                }
             }
 
             return response;
         } catch (error) {
             console.error(`[${requestId}] [ERROR] ${error.message}`);
-            return new Response(JSON.stringify({ success: false, error: error.message, requestId }), { status: 500 });
+            // Return error with CORS headers
+            return new Response(JSON.stringify({ success: false, error: error.message, requestId }), {
+                status: 500,
+                headers: corsHeaders
+            });
         }
     }
 }
-
-
-
-
-
-
-
-
-

@@ -3,3 +3,6 @@ wrangler.toml
 .wrangler
 refresh.http
 .env
+binding.http
+fileUpload.http
+test-image.jpg

@@ -8,3 +8,4 @@ export async function handleHealth(env, requestId) {
         requestId,
     }), { status: 200 });
 }
+
