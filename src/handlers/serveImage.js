@@ -11,7 +11,7 @@ export async function handleServeImage(url, request, env, requestId) {
 
     console.log(`[${requestId}] [SERVE] Requesting: ${imageKey}`);
 
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;
     const object = await bucket.get(imageKey);
 
     if (!object) {

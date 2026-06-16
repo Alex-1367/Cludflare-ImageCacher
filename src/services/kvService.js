@@ -58,7 +58,7 @@ export async function getPropertyImages(propertyId, env, requestId) {
             return { success: true, images: [], propertyId, totalCount: 0 };
         }
 
-        const bucket = env.MY_BUCKET;
+        const bucket = env.R2_BUCKET;
         const verifiedImages = [];
 
         for (const img of propertyImages.images) {
@@ -150,7 +150,7 @@ export async function deletePropertyImages(propertyId, env, requestId) {
             return { success: true, deletedCount: 0, message: 'No images found for this property' };
         }
 
-        const bucket = env.MY_BUCKET;
+        const bucket = env.R2_BUCKET;
         let deletedCount = 0;
 
         for (const img of propertyImages.images) {
@@ -204,7 +204,7 @@ export async function deleteSingleImage(cacheKey, env, requestId) {
             } while (cursor);
         }
 
-        const bucket = env.MY_BUCKET;
+        const bucket = env.R2_BUCKET;
         await bucket.delete(cacheKey);
 
         console.log(`[${requestId}] [KV] Deleted single image: ${cacheKey}`);

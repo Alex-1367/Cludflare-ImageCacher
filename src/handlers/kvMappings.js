@@ -27,7 +27,7 @@ export async function handleGetUrlMapping(url, env, requestId) {
             }), { status: 404 });
         }
 
-        const bucket = env.MY_BUCKET;
+        const bucket = env.R2_BUCKET;
         const object = await bucket.head(mapping.cacheKey);
         const existsInR2 = object !== null;
 
@@ -151,7 +151,7 @@ export async function handleDeleteUrlMapping(request, env, requestId) {
         await env.IMAGE_MAPPINGS.delete(kvKey);
         await env.IMAGE_MAPPINGS.delete(`key:${mapping.cacheKey}`);
 
-        const bucket = env.MY_BUCKET;
+        const bucket = env.R2_BUCKET;
         await bucket.delete(mapping.cacheKey);
 
         console.log(`[${requestId}] [KV] Deleted mapping for: ${imageUrl.substring(0, 60)}...`);

@@ -15,7 +15,7 @@ export async function handleClearOldCache(request, env, requestId) {
 
     console.log(`[${requestId}] [CLEAN] Removing images older than ${olderThanDays} days (before ${cutoffDate.toISOString()})`);
 
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;
     let deleted = 0;
     let cursor;
     const startTime = Date.now();

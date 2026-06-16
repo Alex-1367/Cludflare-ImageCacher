@@ -7,7 +7,7 @@ export async function handleCacheList(url, env, requestId) {
 
     console.log(`[${requestId}] [LIST] Fetching images from R2: limit=${limit}, cursor=${cursor?.substring(0, 20)}...`);
 
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;
     const startTime = Date.now();
 
     try {

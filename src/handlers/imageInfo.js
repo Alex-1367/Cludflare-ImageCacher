@@ -13,7 +13,7 @@ export async function handleImageInfo(url, env, requestId) {
 
     console.log(`[${requestId}] [INFO] Getting metadata for: ${imageKey}`);
 
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;
 
     try {
         const object = await bucket.head(imageKey);

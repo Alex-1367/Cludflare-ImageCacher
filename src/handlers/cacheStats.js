@@ -4,7 +4,7 @@ import { R2_BUCKET_NAME } from '../utils/constants.js'
 
 export async function handleCacheStats(env, requestId) {
     console.log(`[${requestId}] [STATS] Gathering cache statistics`);
-    const bucket = env.MY_BUCKET;
+    const bucket = env.R2_BUCKET;
     let totalObjects = 0;
     let totalSize = 0;
     let cursor;

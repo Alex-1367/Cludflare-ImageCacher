@@ -15,7 +15,7 @@ export async function handleCacheStatus(url, env, requestId) {
 
     let metadata = null;
     if (exists) {
-        const object = await env.MY_BUCKET.head(key);
+        const object = await env.R2_BUCKET.head(key);
         metadata = object?.customMetadata;
     }
 

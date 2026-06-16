@@ -28,7 +28,7 @@ export async function handleDiagnostics(env, requestId) {
 
     // Test R2 bucket access
     try {
-        const bucket = env.MY_BUCKET;
+        const bucket = env.R2_BUCKET;
         const testKey = 'diagnostics/test.txt';
         await bucket.put(testKey, 'test');
         const testObj = await bucket.get(testKey);
